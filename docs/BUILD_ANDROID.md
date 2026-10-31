@@ -3,7 +3,13 @@
 Use **Linux, WSL2 (Ubuntu) or macOS** - Buildozer does not run natively on Windows. The first build downloads the
 Android SDK/NDK (several GB) and takes a long time.
 
-## Commands (Ubuntu / WSL2)
+## Option A - build in the cloud (no Android tools on your PC)
+1. Create a GitHub repository and upload the whole `LUDO_LEGENDS` folder (it contains `.github/workflows/android-apk.yml`).
+2. GitHub -> **Actions** -> **Build Android APK** -> **Run workflow**.
+3. When it turns green (the first run takes roughly 20-40 minutes), download the **ludolegends-apk** artifact, unzip it,
+   copy the `.apk` to your phone and open it (allow "install unknown apps").
+
+## Option B - build on Ubuntu / WSL2 (commands)
 ```
 sudo apt update
 sudo apt install -y git zip unzip openjdk-17-jdk python3-pip autoconf libtool pkg-config zlib1g-dev \
@@ -19,15 +25,21 @@ buildozer android deploy run logcat
 or copy the apk to the phone and open it (allow "install unknown apps").
 
 ## What the project already does for phones
-- Fixed 1366x768 canvas, scaled and letter-boxed to the screen; taps are mapped back to canvas coordinates.
+- **Portrait phone layout (720x1280)** - chosen automatically on Android (also: `python main.py --portrait` or the
+  environment variable `LUDO_LAYOUT=portrait` on a PC to preview it). Red/Green zones sit above the board, Yellow/Blue
+  below it, the turn panel is a strip at the top and every setup screen is re-laid out for a narrow screen.
+  Windows/desktop keeps the 1366x768 landscape layout (`--landscape` forces it).
+- The canvas is scaled and letter-boxed to the screen; taps are mapped back to canvas coordinates.
 - Android sends taps as mouse events (SDL2), so no touch-specific code path is needed. The Android Back button returns to the menu.
-- Landscape, fullscreen (`buildozer.spec`).
+- Portrait, fullscreen (`orientation = portrait` in `buildozer.spec`).
 - Sounds are synthesised at startup (a few seconds on slower phones); real files in `assets/sounds/` replace them.
 
 ## Known risks (not yet verified)
 - python-for-android's `pygame` recipe is **pygame 2.1.0** and its own docs call it "usable, but not complete"
   (no freetype - this game only uses `pygame.font`, which is included). Rendering/performance on real devices is untested.
-- Portrait phones show the game letter-boxed and small; a dedicated portrait layout does not exist yet.
+- Typing names uses the phone's on-screen keyboard (SDL text input); this is untested on a real phone.
 
 ## Status
-`buildozer.spec` is written but **no APK has been built and nothing has been tested on a real phone** yet.
+`buildozer.spec` and the GitHub workflow are written but **no APK has been built and nothing has been tested on a real
+phone**. The environment this game was developed in cannot reach the Android SDK/NDK download servers, so building
+the APK has to happen with Option A or B above. The portrait *layout* is tested headlessly (`tests/test_portrait.py`).

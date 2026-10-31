@@ -11,9 +11,13 @@ cx, cy = app.to_canvas((off[0] + size[0] // 2, off[1] + size[1] // 2))
 assert abs(cx - WIDTH // 2) <= 2 and abs(cy - HEIGHT // 2) <= 2, (cx, cy)
 app.scene.update(1 / 60); app.scene.draw(app.screen); app.present()
 app.window = pygame.display.set_mode((1920, 1080), pygame.RESIZABLE)       # big screen
-assert abs(app._viewport()[2][0] - 1920) <= 1 and abs(app._viewport()[2][1] - 1080) <= 1
+def _fit(w, h):          # the canvas is letter-boxed: expected viewport size for any window and either layout
+    k = min(w / WIDTH, h / HEIGHT); return WIDTH * k, HEIGHT * k
+ew, eh = _fit(1920, 1080)
+assert abs(app._viewport()[2][0] - ew) <= 1 and abs(app._viewport()[2][1] - eh) <= 1
 app.window = pygame.display.set_mode((480, 800), pygame.RESIZABLE)         # portrait phone -> still fits (letter-boxed)
-assert app._viewport()[2][0] == 480
+ew, eh = _fit(480, 800)
+assert abs(app._viewport()[2][0] - ew) <= 1 and abs(app._viewport()[2][1] - eh) <= 1
 app.present()
 # degenerate sizes must not crash (minimised window)
 class _Fake:

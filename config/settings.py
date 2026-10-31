@@ -1,12 +1,32 @@
 """Central configuration: sizes, colours, timings and user settings."""
+import os
+import sys
 from dataclasses import dataclass
 
 TITLE = "LUDO LEGENDS"
 TAGLINE = "ROLL • STRATEGIZE • DOMINATE"
-WIDTH, HEIGHT = 1366, 768
 FPS = 60
 
-CELL = 28
+
+def _want_portrait() -> bool:
+    """Phone layout: Android, env LUDO_LAYOUT=portrait, or the --portrait flag (chosen before anything else imports)."""
+    v = os.environ.get("LUDO_LAYOUT", "").strip().lower()
+    if v in ("portrait", "landscape"):
+        return v == "portrait"
+    if "--portrait" in sys.argv:
+        return True
+    if "--landscape" in sys.argv:
+        return False
+    return "ANDROID_ARGUMENT" in os.environ or hasattr(sys, "getandroidapilevel")
+
+
+PORTRAIT = _want_portrait()
+if PORTRAIT:
+    WIDTH, HEIGHT = 720, 1280
+    CELL = 42
+else:
+    WIDTH, HEIGHT = 1366, 768
+    CELL = 28
 BOARD_SIZE = CELL * 15
 BOARD_X = (WIDTH - BOARD_SIZE) // 2
 BOARD_Y = (HEIGHT - BOARD_SIZE) // 2
@@ -19,7 +39,7 @@ PLAYER_COLOR_NAMES = ("Red", "Green", "Blue", "Yellow")
 ZONE_W, ZONE_H = 240, 156
 CARD_W, CARD_H = 72, 100
 CARD_GAP = 6
-TOKEN_R = 10
+TOKEN_R = 14 if PORTRAIT else 10
 MAX_CARDS_PER_TURN = 1   # one power card per turn (set higher to allow combos)
 
 GOLD = (236, 192, 92)

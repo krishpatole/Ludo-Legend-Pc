@@ -2,7 +2,7 @@
 from __future__ import annotations
 import math
 import pygame
-from config.settings import WIDTH, HEIGHT, GOLD, GOLD_LIGHT, GOLD_DARK, WHITE
+from config.settings import PORTRAIT, WIDTH, HEIGHT, GOLD, GOLD_LIGHT, GOLD_DARK, WHITE
 from ui.buttons import Button
 from utils.helpers import (draw_text, draw_text_fit, draw_glow, crown_surface, gradient_text, clamp, ease_out_back,
                            ease_out_cubic, shade)
@@ -16,8 +16,9 @@ class VictoryOverlay:
         self.name = (name or f"PLAYER {winner + 1}").upper()
         self.t = 0.0
         cx = WIDTH // 2
-        self.btn_again = Button((cx - 230, 520, 220, 62), "PLAY AGAIN", "gold", 24, lambda: on_exit("again"))
-        self.btn_menu = Button((cx + 10, 520, 220, 62), "MAIN MENU", "slate", 24, lambda: on_exit("menu"))
+        self.dy = 150 if PORTRAIT else 0              # phone: everything sits lower on the tall screen
+        self.btn_again = Button((cx - 230, 520 + self.dy, 220, 62), "PLAY AGAIN", "gold", 24, lambda: on_exit("again"))
+        self.btn_menu = Button((cx + 10, 520 + self.dy, 220, 62), "MAIN MENU", "slate", 24, lambda: on_exit("menu"))
 
     def update(self, dt):
         self.t += dt
@@ -36,7 +37,7 @@ class VictoryOverlay:
         veil = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
         veil.fill((6, 6, 20, int(190 * k)))
         surf.blit(veil, (0, 0))
-        cx, cy = WIDTH // 2, 300
+        cx, cy = WIDTH // 2, 300 + self.dy
         # rotating rays in the winner's colour
         rays = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
         for i in range(14):
@@ -49,12 +50,12 @@ class VictoryOverlay:
         s = ease_out_back(clamp((self.t - .1) / .6))
         crown = crown_surface(110)
         c2 = pygame.transform.smoothscale(crown, (max(2, int(110 * s)), max(2, int(crown.get_height() * s))))
-        surf.blit(c2, c2.get_rect(center=(cx, 170 + 5 * math.sin(self.t * 3))))
+        surf.blit(c2, c2.get_rect(center=(cx, 170 + self.dy + 5 * math.sin(self.t * 3))))
         title = gradient_text("LUDO LEGENDS", 46, (255, 236, 160), (222, 150, 40))
-        surf.blit(title, title.get_rect(center=(cx, 252)))
+        surf.blit(title, title.get_rect(center=(cx, 252 + self.dy)))
         txt = f"{self.name} WINS!"
-        draw_text_fit(surf, txt, int(76 * s) + 1, self.color, (cx, 345), WIDTH - 140, shadow=(0, 0, 0), min_size=24)
-        draw_text(surf, "ALL FOUR TOKENS HOME", 20, GOLD_LIGHT, (cx, 410), alpha=255 * k)
+        draw_text_fit(surf, txt, int(76 * s) + 1, self.color, (cx, 345 + self.dy), WIDTH - 80, shadow=(0, 0, 0), min_size=24)
+        draw_text(surf, "ALL FOUR TOKENS HOME", 20, GOLD_LIGHT, (cx, 410 + self.dy), alpha=255 * k)
         if self.t > self.DELAY:
             a = clamp((self.t - self.DELAY) / .4)
             self.btn_again.draw(surf)

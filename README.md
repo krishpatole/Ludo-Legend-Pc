@@ -39,6 +39,9 @@ python3 main.py
 ```
 
 ## Controls
+**Phone / portrait mode:** on Android the game starts in portrait (720x1280). To preview it on a PC:
+`python main.py --portrait` (Windows: `py main.py --portrait`). The PC default stays landscape.
+
 Mouse click or finger tap on everything. `F11` toggles fullscreen. `Esc` (Android Back button) goes back / to the menu.
 
 ## Game setup
@@ -90,6 +93,7 @@ python run_tests.py --soak     # additionally plays complete bot games through t
 | `tests/test_bombs.py` | exactly 4 bombs in 75 simulated games, hidden jittered timer, 3-5 non-safe squares, shield immunity, no bonus roll, live warning/explosion flow |
 | `tests/test_setup.py` | opposite corners from the real geometry, unique colours, name cleaning, every legal colour layout plays full games |
 | `tests/test_setup_ui.py` | the whole wizard by clicking/typing, long names, no-overlap check for 7 layouts, status box gone, text input released |
+| `tests/test_portrait.py` | phone layout: nothing overlaps / off-screen, setup screens for 2-4 players, touch roll (`python run_tests.py --portrait` runs every suite in portrait) |
 | `tests/test_ui_flow.py`, `test_menus.py`, `test_scaling.py`, `test_touch.py` | cards, captures, victory, menus, window scaling, touch input |
 
 Single suite: `python tests/test_capture_bonus.py` etc. Soak: `python tests/test_soak.py <players 2|3|4> <seed> <animations 0|1>`.

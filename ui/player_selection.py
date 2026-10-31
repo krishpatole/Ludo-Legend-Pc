@@ -8,7 +8,7 @@ from ui.buttons import Button
 from ui.board_view import token_sprite
 from ui.menu import Backdrop
 from game.setup import DEFAULT_COLOURS, COLOUR_NAMES
-from utils.helpers import draw_text, draw_glow, approach, shade, lerp_color, crown_surface
+from utils.helpers import draw_text_fit, draw_text, draw_glow, approach, shade, lerp_color, crown_surface
 
 
 class PlayerSelectScreen:
@@ -16,11 +16,16 @@ class PlayerSelectScreen:
         self.t = 0.0
         self.back = Backdrop(12)
         self.on_choose = on_choose
-        cw, ch, gap = 270, 340, 40
-        x0 = WIDTH // 2 - (3 * cw + 2 * gap) // 2
-        self.cards = [dict(n=n, rect=pygame.Rect(x0 + i * (cw + gap), 200, cw, ch), hover=0.0, press=0.0)
-                      for i, n in enumerate((2, 3, 4))]
-        self.btn_back = Button((WIDTH // 2 - 110, 610, 220, 56), "BACK", "slate", 26, on_back)
+        if PORTRAIT:                                  # phone: three wide cards stacked top to bottom
+            cw, ch, gap = 660, 230, 26
+            self.cards = [dict(n=n, rect=pygame.Rect(WIDTH // 2 - cw // 2, 250 + i * (ch + gap), cw, ch), hover=0.0, press=0.0)
+                          for i, n in enumerate((2, 3, 4))]
+        else:
+            cw, ch, gap = 270, 340, 40
+            x0 = WIDTH // 2 - (3 * cw + 2 * gap) // 2
+            self.cards = [dict(n=n, rect=pygame.Rect(x0 + i * (cw + gap), 200, cw, ch), hover=0.0, press=0.0)
+                          for i, n in enumerate((2, 3, 4))]
+        self.btn_back = Button((WIDTH // 2 - 110, 1130 if PORTRAIT else 610, 220, 56), "BACK", "slate", 26, on_back)
         self.audio = get_audio()
 
     def handle_event(self, e):
@@ -46,9 +51,11 @@ class PlayerSelectScreen:
     def draw(self, surf):
         self.back.draw(surf)
         cr = crown_surface(54)
-        surf.blit(cr, cr.get_rect(center=(WIDTH // 2, 70)))
-        draw_text(surf, "SELECT PLAYERS", 56, GOLD_LIGHT, (WIDTH // 2, 134), shadow=(0, 0, 0))
-        draw_text(surf, "Choose how many will play — names and colours come next", 20, (170, 178, 215), (WIDTH // 2, 176))
+        top = 40 if PORTRAIT else 0
+        surf.blit(cr, cr.get_rect(center=(WIDTH // 2, 70 + top)))
+        draw_text(surf, "SELECT PLAYERS", 56, GOLD_LIGHT, (WIDTH // 2, 134 + top), shadow=(0, 0, 0))
+        draw_text_fit(surf, "Choose how many will play — names and colours come next", 20, (170, 178, 215),
+                      (WIDTH // 2, 176 + top), WIDTH - 40)
         for c in self.cards:
             h, n = c["hover"], c["n"]
             r = c["rect"].copy()
@@ -59,6 +66,22 @@ class PlayerSelectScreen:
             pygame.draw.rect(panel, (18, 20, 50, 230), panel.get_rect(), border_radius=24)
             surf.blit(panel, r.topleft)
             pygame.draw.rect(surf, lerp_color((90, 96, 150), GOLD, h), r, 3, border_radius=24)
+            if PORTRAIT:
+                draw_text(surf, str(n), 96, GOLD_LIGHT, (r.x + 92, r.centery - 22), shadow=(0, 0, 0))
+                draw_text(surf, "PLAYERS", 26, WHITE, (r.x + 92, r.centery + 40), shadow=(0, 0, 0))
+                for i in range(4):
+                    active = i in DEFAULT_COLOURS[n]
+                    col = PLAYER_COLORS[i]
+                    pr = pygame.Rect(0, 0, 100, 96)
+                    pr.center = (r.x + 232 + i * 108 + 46, r.centery - 12)
+                    pygame.draw.rect(surf, shade(col, .45 if active else .25), pr, border_radius=14)
+                    pygame.draw.rect(surf, col if active else (70, 72, 90), pr, 2, border_radius=14)
+                    spr = token_sprite(col if active else (92, 94, 110), 13)
+                    for k in range(4):
+                        surf.blit(spr, spr.get_rect(center=(pr.x + 34 + (k % 2) * 30, pr.y + 40 + (k // 2) * 30)))
+                    draw_text(surf, COLOUR_NAMES[i], 13, WHITE if active else (110, 112, 135), (pr.centerx, pr.y + 14))
+                draw_text(surf, "TAP TO PLAY", 20, GOLD_LIGHT if h > .5 else (150, 158, 195), (r.x + 232 + 2 * 108 + 46 - 4, r.bottom - 28))
+                continue
             draw_text(surf, f"{n} PLAYERS", 34, WHITE, (r.centerx, r.y + 50), shadow=(0, 0, 0))
             # colour swatches + token previews (2x2 grid per colour pair)
             for i in range(4):

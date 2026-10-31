@@ -100,8 +100,9 @@ def test_victory_and_exit_buttons():
     do_roll(sc, 1); step(sc, until=lambda: sc.state == S.TOKEN_SELECTION or sc.state == S.TOKEN_MOVEMENT)
     step(sc, until=lambda: sc.state == S.VICTORY, limit=30); step(sc, 1.8); shot(sc, "27_victory")
     assert m.winner == 0
-    click(sc, (WIDTH // 2 - 120, 551)); assert exits == ["again"], exits
-    click(sc, (WIDTH // 2 + 120, 551)); assert exits == ["again", "menu"], exits
+    ov = sc.victory
+    click(sc, ov.btn_again.rect.center); assert exits == ["again"], exits
+    click(sc, ov.btn_menu.rect.center); assert exits == ["again", "menu"], exits
     print("ok victory")
 
 

@@ -14,7 +14,7 @@ from ui.menu import Backdrop
 from utils.helpers import (draw_text, draw_text_fit, draw_glow, crown_surface, approach, shade, lerp_color)
 
 CX = WIDTH // 2
-BTN_Y = 656
+BTN_Y = 1130 if PORTRAIT else 656
 STEPS = ("PLAYERS", "NAMES", "COLOURS", "REVIEW")
 GREY = (92, 94, 112)
 
@@ -52,8 +52,8 @@ class _Step:
         cr = crown_surface(44)
         surf.blit(cr, cr.get_rect(center=(CX, 44)))
         draw_text(surf, self.title, 44, GOLD_LIGHT, (CX, 98), shadow=(0, 0, 0))
-        draw_text(surf, self.subtitle, 18, (170, 178, 215), (CX, 134))
-        gap = 170
+        draw_text_fit(surf, self.subtitle, 18, (170, 178, 215), (CX, 134), WIDTH - 30)
+        gap = 150 if PORTRAIT else 170
         x0 = CX - gap * (len(STEPS) - 1) / 2
         for i, lab in enumerate(STEPS):
             x, y = x0 + i * gap, 168
@@ -72,7 +72,7 @@ class _Step:
 
 # =========================================================================== names
 class NamesScreen(_Step):
-    FIELD_W, FIELD_H, ROW_H, Y0 = 500, 56, 82, 224
+    FIELD_W, FIELD_H, ROW_H, Y0 = (600, 64, 132, 250) if PORTRAIT else (500, 56, 82, 224)
 
     def __init__(self, draft, on_back, on_next):
         super().__init__(1, "PLAYER NAMES", "Type a name for each player — leave a box empty to use the default")
@@ -95,6 +95,8 @@ class NamesScreen(_Step):
             pass
 
     def field_rect(self, i):
+        if PORTRAIT:                                 # label sits above the box
+            return pygame.Rect(CX - self.FIELD_W // 2, self.Y0 + 30 + i * self.ROW_H, self.FIELD_W, self.FIELD_H)
         return pygame.Rect(CX - 190, self.Y0 + i * self.ROW_H, self.FIELD_W, self.FIELD_H)
 
     def try_next(self):
@@ -147,7 +149,8 @@ class NamesScreen(_Step):
             focused = i == self.focus
             if focused:
                 draw_glow(surf, r.center, 330, GOLD, .12)
-            draw_text(surf, f"PLAYER {i + 1}", 16, GOLD_LIGHT if focused else (150, 158, 195), (r.x - 24, r.centery), "midright")
+            lab_pos, lab_anchor = ((r.x + 6, r.y - 16), "midleft") if PORTRAIT else ((r.x - 24, r.centery), "midright")
+            draw_text(surf, f"PLAYER {i + 1}", 16, GOLD_LIGHT if focused else (150, 158, 195), lab_pos, lab_anchor)
             pygame.draw.rect(surf, (16, 18, 46), r, border_radius=14)
             pygame.draw.rect(surf, GOLD if focused else (84, 90, 140), r, 3 if focused else 2, border_radius=14)
             raw = d.names[i]
@@ -160,18 +163,21 @@ class NamesScreen(_Step):
                 cx = (tr.right + 3) if raw else (r.x + 20)
                 pygame.draw.line(surf, GOLD_LIGHT, (cx, r.centery - 14), (cx, r.centery + 14), 2)
             draw_text(surf, f"{len(raw)}/{MAX_NAME_LEN}", 12, (120, 126, 165), (r.right - 14, r.centery), "midright")
+        hy = (self.Y0 + d.n * self.ROW_H + 20) if PORTRAIT else 570
         if errors:
-            draw_text(surf, errors[0].upper(), 18, (255, 130, 130), (CX, 570))
+            draw_text_fit(surf, errors[0].upper(), 18, (255, 130, 130), (CX, hy), WIDTH - 40)
         else:
-            draw_text(surf, "Tap or click a box, then type. Tab / Enter moves to the next player.", 15, (150, 158, 195), (CX, 570))
+            hint = "Tap a box, then type. Enter moves to the next player." if PORTRAIT else \
+                "Tap or click a box, then type. Tab / Enter moves to the next player."
+            draw_text_fit(surf, hint, 15, (150, 158, 195), (CX, hy), WIDTH - 40)
         for b in self.buttons:
             b.draw(surf)
 
 
 # ========================================================================== colours
 class ColoursScreen(_Step):
-    ROW_H, TILE_W, TILE_H, TILE_GAP = 92, 128, 66, 14
-    PANEL_W = 880
+    ROW_H, TILE_W, TILE_H, TILE_GAP = (188, 152, 66, 10) if PORTRAIT else (92, 128, 66, 14)
+    PANEL_W = 680 if PORTRAIT else 880
 
     def __init__(self, draft, on_back, on_next):
         super().__init__(2, "CHOOSE COLOURS", "Every player picks a different colour — taken colours are locked")
@@ -180,13 +186,20 @@ class ColoursScreen(_Step):
         self.hover = 0.0
         self.hover_tile: tuple[int, int] | None = None
         self.notice = ("", 0.0)
-        self.btn_back = Button((CX - 400, BTN_Y, 220, 58), "BACK", "slate", 26, lambda: (self.click_sound(), on_back()))
-        self.btn_auto = Button((CX - 130, BTN_Y, 260, 58), "AUTO ASSIGN", "violet", 24, self.do_auto)
-        self.btn_next = Button((CX + 180, BTN_Y, 220, 58), "CONTINUE", "gold", 26, self.try_next)
+        if PORTRAIT:
+            self.btn_back = Button((24, BTN_Y, 190, 58), "BACK", "slate", 24, lambda: (self.click_sound(), on_back()))
+            self.btn_auto = Button((226, BTN_Y, 250, 58), "AUTO ASSIGN", "violet", 22, self.do_auto)
+            self.btn_next = Button((488, BTN_Y, 208, 58), "CONTINUE", "gold", 24, self.try_next)
+        else:
+            self.btn_back = Button((CX - 400, BTN_Y, 220, 58), "BACK", "slate", 26, lambda: (self.click_sound(), on_back()))
+            self.btn_auto = Button((CX - 130, BTN_Y, 260, 58), "AUTO ASSIGN", "violet", 24, self.do_auto)
+            self.btn_next = Button((CX + 180, BTN_Y, 220, 58), "CONTINUE", "gold", 26, self.try_next)
         self.buttons = [self.btn_back, self.btn_auto, self.btn_next]
 
     # ---- geometry ----
     def y0(self):
+        if PORTRAIT:
+            return 214
         total = self.draft.n * self.ROW_H
         return 214 + max(0, (390 - total) // 2)
 
@@ -195,6 +208,9 @@ class ColoursScreen(_Step):
 
     def tile_rect(self, i, c):
         r = self.row_rect(i)
+        if PORTRAIT:                                  # tiles in a row under the player's name
+            x0 = r.x + (r.w - (4 * self.TILE_W + 3 * self.TILE_GAP)) // 2
+            return pygame.Rect(x0 + c * (self.TILE_W + self.TILE_GAP), r.bottom - 14 - self.TILE_H, self.TILE_W, self.TILE_H)
         x0 = r.right - 20 - (4 * self.TILE_W + 3 * self.TILE_GAP)
         return pygame.Rect(x0 + c * (self.TILE_W + self.TILE_GAP), r.centery - self.TILE_H // 2, self.TILE_W, self.TILE_H)
 
@@ -287,22 +303,29 @@ class ColoursScreen(_Step):
             chosen = d.colours[i]
             pygame.draw.rect(surf, PLAYER_COLORS[chosen] if chosen is not None else (70, 76, 120), r, 3 if chosen is not None else 2, border_radius=18)
             spr = token_sprite(PLAYER_COLORS[chosen] if chosen is not None else GREY, 17)
-            surf.blit(spr, spr.get_rect(center=(r.x + 38, r.centery)))
+            hy = r.y + 34 if PORTRAIT else r.centery
+            surf.blit(spr, spr.get_rect(center=(r.x + 38, hy)))
             nm = clean_name(d.names[i], i)
-            draw_text_fit(surf, nm.upper(), 24, WHITE, (r.x + 72, r.centery - 10), 200, "midleft", min_size=12)
-            draw_text(surf, COLOUR_NAMES[chosen] if chosen is not None else "no colour yet", 14,
-                      PLAYER_COLORS[chosen] if chosen is not None else (150, 156, 190), (r.x + 72, r.centery + 14), "midleft")
+            if PORTRAIT:
+                draw_text_fit(surf, nm.upper(), 24, WHITE, (r.x + 72, hy), 330, "midleft", min_size=12)
+                draw_text(surf, COLOUR_NAMES[chosen] if chosen is not None else "no colour yet", 16,
+                          PLAYER_COLORS[chosen] if chosen is not None else (150, 156, 190), (r.right - 20, hy), "midright")
+            else:
+                draw_text_fit(surf, nm.upper(), 24, WHITE, (r.x + 72, r.centery - 10), 200, "midleft", min_size=12)
+                draw_text(surf, COLOUR_NAMES[chosen] if chosen is not None else "no colour yet", 14,
+                          PLAYER_COLORS[chosen] if chosen is not None else (150, 156, 190), (r.x + 72, r.centery + 14), "midleft")
             for c in range(4):
                 self.draw_tile(surf, i, c)
         # status / hint / notice line
+        ny = (self.y0() + d.n * self.ROW_H + 8) if PORTRAIT else 598
         if self.notice[1] > self.t:
-            draw_text(surf, self.notice[0], 17, (255, 190, 120), (CX, 598))
+            draw_text_fit(surf, self.notice[0], 17, (255, 190, 120), (CX, ny), WIDTH - 30)
         elif d.colours_complete:
-            draw_text(surf, "All set — press CONTINUE", 17, (130, 220, 150), (CX, 598))
+            draw_text(surf, "All set — press CONTINUE", 17, (130, 220, 150), (CX, ny))
         else:
-            draw_text(surf, "Tap a colour for each player. Tap your own colour again to change it.", 16, (150, 158, 195), (CX, 598))
+            draw_text_fit(surf, "Tap a colour for each player. Tap your own colour again to change it.", 16, (150, 158, 195), (CX, ny), WIDTH - 30)
         if d.n == 2:
-            draw_text(surf, "2 players always sit on opposite corners: Red-Blue or Green-Yellow", 14, (130, 138, 178), (CX, 624))
+            draw_text_fit(surf, "2 players always sit on opposite corners: Red-Blue or Green-Yellow", 14, (130, 138, 178), (CX, ny + 26), WIDTH - 30)
         self.btn_next.enabled = d.colours_complete
         for b in self.buttons:
             b.draw(surf)
@@ -315,9 +338,14 @@ class ReviewScreen(_Step):
     def __init__(self, draft, on_back, on_edit_names, on_start):
         super().__init__(3, "REVIEW", "Check the line-up, then start the game")
         self.draft = draft
-        self.btn_back = Button((CX - 420, BTN_Y, 220, 58), "BACK", "slate", 26, lambda: (self.click_sound(), on_back()))
-        self.btn_names = Button((CX - 170, BTN_Y, 260, 58), "EDIT NAMES", "violet", 24, lambda: (self.click_sound(), on_edit_names()))
-        self.btn_start = Button((CX + 140, BTN_Y, 280, 58), "START GAME", "gold", 28, lambda: (self.click_sound(), on_start()))
+        if PORTRAIT:
+            self.btn_back = Button((24, BTN_Y, 170, 58), "BACK", "slate", 24, lambda: (self.click_sound(), on_back()))
+            self.btn_names = Button((206, BTN_Y, 220, 58), "EDIT NAMES", "violet", 22, lambda: (self.click_sound(), on_edit_names()))
+            self.btn_start = Button((438, BTN_Y, 258, 58), "START GAME", "gold", 26, lambda: (self.click_sound(), on_start()))
+        else:
+            self.btn_back = Button((CX - 420, BTN_Y, 220, 58), "BACK", "slate", 26, lambda: (self.click_sound(), on_back()))
+            self.btn_names = Button((CX - 170, BTN_Y, 260, 58), "EDIT NAMES", "violet", 24, lambda: (self.click_sound(), on_edit_names()))
+            self.btn_start = Button((CX + 140, BTN_Y, 280, 58), "START GAME", "gold", 28, lambda: (self.click_sound(), on_start()))
         self.buttons = [self.btn_back, self.btn_names, self.btn_start]
 
     def handle_event(self, e):
@@ -329,7 +357,7 @@ class ReviewScreen(_Step):
         d = self.draft
         names = d.display_names()
         players = sorted(range(d.n), key=lambda i: d.colours[i] if d.colours[i] is not None else 9)   # clockwise board order
-        panel = pygame.Rect(CX - 380, 214, 760, d.n * self.ROW_H + 70)
+        panel = pygame.Rect(CX - (340 if PORTRAIT else 380), 240 if PORTRAIT else 214, 680 if PORTRAIT else 760, d.n * self.ROW_H + 70)
         bg = pygame.Surface(panel.size, pygame.SRCALPHA)
         pygame.draw.rect(bg, (14, 16, 40, 215), bg.get_rect(), border_radius=22)
         surf.blit(bg, panel.topleft)

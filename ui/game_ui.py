@@ -726,35 +726,41 @@ class GameScene:
         pygame.draw.rect(panel, (14, 16, 40, 200), panel.get_rect(), border_radius=20)
         surf.blit(panel, r.topleft)
         pygame.draw.rect(surf, shade(col, .8), r, 3, border_radius=20)
+        wide = r.w > r.h * 2                         # phone layout: a wide strip, info side by side
+        tx = r.x + int(r.w * .36) if wide else r.centerx
         if self.state == S.DETERMINING_FIRST_PLAYER:
-            draw_text(surf, "GET READY", 26, GOLD_LIGHT, (r.centerx, r.y + 30), shadow=(0, 0, 0))
+            draw_text(surf, "GET READY", 26, GOLD_LIGHT, (tx, r.y + 30), shadow=(0, 0, 0))
         else:
             who = self.focus if self.focus is not None else c
             word = "SKIPPED" if self.state == S.TURN_SKIPPED else "TURN"
-            draw_text_fit(surf, f"{self.label(who)} {word}", 28, self.color(who), (r.centerx, r.y + 30), r.w - 28,
-                          shadow=(0, 0, 0), min_size=14)
-        draw_text(surf, f"TURN {max(1, self.match.turn.turn_number)}", 12, (150, 158, 195), (r.centerx, r.y + 56))
+            draw_text_fit(surf, f"{self.label(who)} {word}", 28, self.color(who), (tx, r.y + 30),
+                          (int(r.w * .6) if wide else r.w) - 28, shadow=(0, 0, 0), min_size=14)
+        draw_text(surf, f"TURN {max(1, self.match.turn.turn_number)}", 12, (150, 158, 195), (tx, r.y + 56))
         if SETTINGS.bombs and self.state != S.DETERMINING_FIRST_PLAYER:
             b = self.match.bombs
             warn = self.state == S.BOMB_WARNING
             col = (255, 120, 100) if warn else (150, 158, 195)
-            tr = draw_text(surf, f"BOMBS {b.fired}/{b.total}", 11, col, (r.centerx + 8, r.y + 72))
+            tr = draw_text(surf, f"BOMBS {b.fired}/{b.total}", 11, col, (tx + 8, r.y + 72))
             draw_bomb_icon(surf, tr.x - 11, tr.centery, 5, self.t)
-        # right of the dice: roll info
+        # roll info
         t = self.match.turn
-        ix = r.centerx - 40
+        if wide:
+            ix, ry, num_y, badge_y = r.right - 96, r.y + 24, r.y + 58, r.y + 92
+        else:
+            ix, ry, num_y, badge_y = r.centerx, r.y + 104, r.y + 140, r.y + 182
         if self.state != S.DETERMINING_FIRST_PLAYER:
-            draw_text(surf, "ROLLS LEFT", 13, (150, 158, 195), (ix + 40, r.y + 104))
-            draw_text(surf, str(t.rolls_remaining), 44, WHITE, (ix + 40, r.y + 140), shadow=(0, 0, 0))
+            draw_text(surf, "ROLLS LEFT", 13, (150, 158, 195), (ix, ry))
+            draw_text(surf, str(t.rolls_remaining), 44, WHITE, (ix, num_y), shadow=(0, 0, 0))
             if t.double_active:
                 pulse = .75 + .25 * math.sin(self.t * 5)
-                badge = pygame.Rect(0, 0, 110, 26)
-                badge.center = (ix + 40, r.y + 182)
+                badge = pygame.Rect(0, 0, 110, 22 if wide else 26)
+                badge.center = (ix, badge_y)
                 pygame.draw.rect(surf, (88, 36, 140), badge, border_radius=13)
                 pygame.draw.rect(surf, lerp_color((255, 140, 240), (255, 255, 255), 1 - pulse), badge, 2, border_radius=13)
                 draw_text(surf, "DOUBLE DICE x2", 12, (255, 190, 250), badge.center)
         if self.hint:
-            draw_text(surf, self.hint, 15, GOLD_LIGHT, (r.centerx, r.bottom - 18), alpha=200 + 55 * math.sin(self.t * 4))
+            hx, hy = (tx, r.bottom - 22) if wide else (r.centerx, r.bottom - 18)
+            draw_text(surf, self.hint, 15, GOLD_LIGHT, (hx, hy), alpha=200 + 55 * math.sin(self.t * 4))
 
     # --- overlays --------------------------------------------------------------
     def draw_first_player(self, surf):

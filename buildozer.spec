@@ -10,7 +10,7 @@ source.exclude_dirs = tests, docs, bin, .buildozer, __pycache__, dist, build, .v
 version = 1.0
 # python-for-android ships a SDL2 'pygame' recipe (pygame 2.1.0, no freetype - this game only uses pygame.font)
 requirements = python3,pygame
-orientation = landscape
+orientation = portrait
 fullscreen = 1
 android.permissions =
 android.api = 33

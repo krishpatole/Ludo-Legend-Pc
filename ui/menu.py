@@ -40,15 +40,17 @@ class Backdrop:
             surf.blit(img, img.get_rect(center=(x, y)))
 
 
-def draw_title(surf, t, cy=150, crown_w=112):
+def draw_title(surf, t, cy=None, crown_w=112):
+    cy = (330 if PORTRAIT else 150) if cy is None else cy
+    size = 66 if PORTRAIT else 82
     cx = WIDTH // 2
     bob = math.sin(t * 2) * 5
     draw_glow(surf, (cx, cy - 40), 170, GOLD, .28 + .08 * math.sin(t * 2))
     c = crown_surface(crown_w)
     surf.blit(c, c.get_rect(center=(cx, cy - 46 + bob)))
-    sh = gradient_text("LUDO LEGENDS", 82, (40, 20, 70), (40, 20, 70))
+    sh = gradient_text("LUDO LEGENDS", size, (40, 20, 70), (40, 20, 70))
     surf.blit(sh, sh.get_rect(center=(cx + 4, cy + 54 + 5)))
-    title = gradient_text("LUDO LEGENDS", 82, (255, 240, 170), (226, 150, 38))
+    title = gradient_text("LUDO LEGENDS", size, (255, 240, 170), (226, 150, 38))
     surf.blit(title, title.get_rect(center=(cx, cy + 54)))
     draw_text(surf, TAGLINE, 24, (200, 205, 240), (cx, cy + 118), shadow=(0, 0, 0))
 
@@ -58,7 +60,8 @@ class MenuScreen:
         self.t = 0.0
         self.back = Backdrop()
         cx = WIDTH // 2
-        self.buttons = [Button((cx - 170, 360 + i * 84, 340, 66), lab, st, 30, lambda a=act: on_action(a))
+        bw, by, bstep = (420, 640, 104) if PORTRAIT else (340, 360, 84)
+        self.buttons = [Button((cx - bw // 2, by + i * bstep, bw, 66), lab, st, 30, lambda a=act: on_action(a))
                         for i, (lab, st, act) in enumerate((("PLAY", "gold", "play"), ("OPTIONS", "violet", "options"),
                                                             ("EXIT", "slate", "exit")))]
         self.audio = get_audio()
@@ -125,10 +128,11 @@ class OptionsScreen:
         self.t = 0.0
         self.back = Backdrop(10)
         cx = WIDTH // 2
-        self.toggles = [Toggle((cx - 300, 205 + i * 76, 600, 62), lab, attr)
+        ty, tstep = (330, 92) if PORTRAIT else (205, 76)
+        self.toggles = [Toggle((cx - 300, ty + i * tstep, 600, 62), lab, attr)
                         for i, (lab, attr) in enumerate((("MUSIC", "music"), ("SFX", "sfx"), ("ANIMATIONS", "animations"),
                                                          ("BOMBS", "bombs")))]
-        self.btn = Button((cx - 130, 545, 260, 62), "BACK", "gold", 28, on_back)
+        self.btn = Button((cx - 130, 760 if PORTRAIT else 545, 260, 62), "BACK", "gold", 28, on_back)
         self.on_changed = on_changed
         self.audio = get_audio()
 
@@ -151,8 +155,9 @@ class OptionsScreen:
     def draw(self, surf):
         self.back.draw(surf)
         c = crown_surface(60)
-        surf.blit(c, c.get_rect(center=(WIDTH // 2, 80)))
-        draw_text(surf, "OPTIONS", 52, GOLD_LIGHT, (WIDTH // 2, 150), shadow=(0, 0, 0))
+        oy = 150 if PORTRAIT else 0
+        surf.blit(c, c.get_rect(center=(WIDTH // 2, 80 + oy)))
+        draw_text(surf, "OPTIONS", 52, GOLD_LIGHT, (WIDTH // 2, 150 + oy), shadow=(0, 0, 0))
         for tg in self.toggles:
             tg.draw(surf)
         self.btn.draw(surf)

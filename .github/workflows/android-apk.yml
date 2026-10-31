@@ -1,0 +1,42 @@
+# Builds the Android APK (portrait phone version) in the cloud - no local Android setup needed.
+# How to use: push this folder to a GitHub repository, open the "Actions" tab, choose
+# "Build Android APK" -> "Run workflow". When it finishes, download the "ludolegends-apk" artifact.
+# NOTE: this workflow was written but has NOT been run yet - the first run may need small fixes.
+name: Build Android APK
+on:
+  workflow_dispatch:
+  push:
+    tags: ["v*"]
+jobs:
+  apk:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - name: System packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y git zip unzip autoconf automake libtool pkg-config zlib1g-dev \
+            libncurses5-dev libncursesw5-dev libtinfo5 cmake libffi-dev libssl-dev build-essential ccache
+      - name: Install Buildozer
+        run: pip install buildozer "cython<3" virtualenv
+      - name: Cache Buildozer / python-for-android
+        uses: actions/cache@v4
+        with:
+          path: |
+            .buildozer
+            ~/.buildozer
+          key: buildozer-${{ hashFiles('buildozer.spec') }}
+      - name: Build debug APK
+        run: buildozer -v android debug
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ludolegends-apk
+          path: bin/*.apk
