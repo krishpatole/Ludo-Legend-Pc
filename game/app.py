@@ -21,6 +21,10 @@ class App:
         # The game always renders to a fixed 1366x768 canvas which is scaled (letter-boxed) to the
         # real window / phone screen. Mouse + touch positions are mapped back to canvas coordinates.
         self.screen = pygame.Surface((WIDTH, HEIGHT))
+        # Reuse the fade overlay instead of allocating a full-screen Surface every frame.
+        self._fade_surface = pygame.Surface((WIDTH, HEIGHT))
+        self._fade_surface.fill((0, 0, 0))
+        self._is_android = sys.platform == "android" or bool(os.environ.get("ANDROID_ARGUMENT"))
         self.window = self._make_window()
         self._raw_mouse = pygame.mouse.get_pos
         self._touch_pos = None          # last finger position (window pixels) while touch is the active input
@@ -94,7 +98,13 @@ class App:
         if size == (WIDTH, HEIGHT):
             self.window.blit(self.screen, off)
         else:
-            self.window.blit(pygame.transform.smoothscale(self.screen, size), off)
+            # Android's software renderer benefits from the faster scaler. Desktop keeps
+            # the smoother filter so the existing PC presentation remains unchanged.
+            if self._is_android:
+                frame = pygame.transform.scale(self.screen, size)
+            else:
+                frame = pygame.transform.smoothscale(self.screen, size)
+            self.window.blit(frame, off)
         pygame.display.flip()
 
     # ---- scene switching (with a quick fade through black) ----------------
@@ -225,13 +235,17 @@ class App:
             self.fade = max(0.0, self.fade - dt * 4)
         self.scene.draw(self.screen)
         if self.fade > 0.01:
-            veil = pygame.Surface((WIDTH, HEIGHT))
-            veil.set_alpha(int(255 * self.fade))
-            self.screen.blit(veil, (0, 0))
+            # set_alpha + blit avoids a costly per-frame Surface allocation.
+            self._fade_surface.set_alpha(int(255 * self.fade))
+            self.screen.blit(self._fade_surface, (0, 0))
         self.present()
 
     def run(self):
+        # Target 60 FPS on both Android and desktop. Actual FPS depends on
+        # device performance and display refresh rate; this is a frame cap,
+        # not a guarantee that every device will sustain 60 FPS.
+        target_fps = 60
         while self.running:
-            dt = self.clock.tick(FPS) / 1000.0
+            dt = self.clock.tick(target_fps) / 1000.0
             self.frame(dt, pygame.event.get())
         pygame.quit()
