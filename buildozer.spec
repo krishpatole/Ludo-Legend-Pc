@@ -8,7 +8,8 @@ source.dir = .
 source.include_exts = py,png,jpg,ogg,wav,mp3,ttf
 source.exclude_dirs = tests, docs, bin, .buildozer, __pycache__, dist, build, .venv
 version = 1.0
-# python-for-android ships a SDL2 'pygame' recipe (pygame 2.1.0, no freetype - this game only uses pygame.font)
+# Use a local pygame 2.6.1 recipe: the bundled p4a pygame 2.1.0 recipe fails with CPython 3.14.
+p4a.local_recipes = ./p4a-recipes
 requirements = python3,pygame
 orientation = portrait
 fullscreen = 1

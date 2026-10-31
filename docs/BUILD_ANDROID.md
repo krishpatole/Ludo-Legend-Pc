@@ -24,6 +24,23 @@ buildozer android deploy run logcat
 ```
 or copy the apk to the phone and open it (allow "install unknown apps").
 
+## Android pygame compatibility fix
+
+The Android build uses a project-local python-for-android recipe at
+`p4a-recipes/pygame/`. It builds pygame 2.6.1 from the upstream GitHub source
+archive instead of the bundled pygame 2.1.0 recipe. This is needed because the
+old generated C source includes `longintrepr.h`, which is not available as a
+public header in CPython 3.12 and later.
+
+The local recipe also omits pygame's optional `_sprite.pyx` accelerator when
+building with Cython 3.1 and adds the SIMD blitter sources to the Android
+surface module. These are build compatibility changes; they do not change
+LUDO LEGENDS gameplay code.
+
+A successful GitHub Actions build only confirms that the APK was packaged.
+Install and launch it on a real Android device to verify rendering, sound,
+touch input, and portrait layout.
+
 ## What the project already does for phones
 - **Portrait phone layout (720x1280)** - chosen automatically on Android (also: `python main.py --portrait` or the
   environment variable `LUDO_LAYOUT=portrait` on a PC to preview it). Red/Green zones sit above the board, Yellow/Blue

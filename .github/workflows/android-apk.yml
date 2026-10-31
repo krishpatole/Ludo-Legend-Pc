@@ -33,7 +33,7 @@ jobs:
           path: |
             .buildozer
             ~/.buildozer
-          key: buildozer-${{ hashFiles('buildozer.spec') }}
+          key: buildozer-${{ hashFiles('buildozer.spec', 'p4a-recipes/pygame/**') }}
       - name: Build debug APK
         run: buildozer -v android debug
       - uses: actions/upload-artifact@v4
