@@ -14,7 +14,7 @@ from utils.helpers import approach
 
 
 class App:
-    def __init__(self):
+    def __init__(self, warmup=None):
         pygame.mixer.pre_init(22050, -16, 1, 512)
         pygame.init()
         pygame.display.set_caption(TITLE)
@@ -40,7 +40,18 @@ class App:
         self.fade = 1.0            # 1 = black. Scenes fade in from black.
         self.pending = None
         self.running = True
-        self.goto(S.MENU, instant=True)
+        self.warm = None
+        if warmup is None:
+            warmup = not os.environ.get("LUDO_NO_WARMUP")
+        if warmup:
+            # LOADING screen: pre-builds all cached art/board/sounds-independent surfaces a little per frame,
+            # so the menu animation and the START GAME button never stall to generate them.
+            from game.warmup import Warmup
+            self.warm = Warmup(self)
+            self.scene = self.warm
+            self.fade = 0.0
+        else:
+            self.goto(S.MENU, instant=True)
 
     # ---- window / scaling -------------------------------------------------
     @staticmethod
@@ -94,17 +105,23 @@ class App:
         k, off, size = self._viewport()
         if size[0] < 2 or size[1] < 2:
             return                                         # nothing sensible to draw while minimised
-        self.window.fill((0, 0, 0))
+        vp = (off, size, self.window.get_size())
+        if vp != getattr(self, "_vp", None):
+            self._vp, self._clear = vp, 3                  # (re)paint the letter-box bars a few frames after any change
+        if self._clear > 0:
+            self.window.fill((0, 0, 0))
+            self._clear -= 1
         if size == (WIDTH, HEIGHT):
             self.window.blit(self.screen, off)
         else:
-            # Android's software renderer benefits from the faster scaler. Desktop keeps
-            # the smoother filter so the existing PC presentation remains unchanged.
-            if self._is_android:
-                frame = pygame.transform.scale(self.screen, size)
-            else:
-                frame = pygame.transform.smoothscale(self.screen, size)
-            self.window.blit(frame, off)
+            # Scale straight into a view of the window: no per-frame temporary surface. Android uses the fast
+            # nearest-neighbour scaler; desktop keeps the smoother filter so the PC picture is unchanged.
+            scaler = pygame.transform.scale if self._is_android else pygame.transform.smoothscale
+            try:
+                view = self.window.subsurface(pygame.Rect(off, size))
+                scaler(self.screen, size, view)
+            except (ValueError, pygame.error):
+                self.window.blit(scaler(self.screen, size), off)
         pygame.display.flip()
 
     # ---- scene switching (with a quick fade through black) ----------------
@@ -225,7 +242,11 @@ class App:
         """One full iteration: input -> update -> fade/scene switch -> draw -> present."""
         self.handle_events(events)
         self.scene.update(dt)
-        if self.pending:
+        if self.warm is not None and self.warm.finished:
+            self.warm = None
+            self.fade = 1.0                           # the menu fades in from black
+            self._build(S.MENU)
+        elif self.pending:
             self.fade = min(1.0, self.fade + dt * 6)
             if self.fade >= 1.0:
                 st, n = self.pending
@@ -246,6 +267,8 @@ class App:
         # not a guarantee that every device will sustain 60 FPS.
         target_fps = 60
         while self.running:
-            dt = self.clock.tick(target_fps) / 1000.0
+            # Clamp: after a stall (loading, a slow frame, app switching) animations must continue smoothly
+            # instead of jumping ahead by the whole stalled time.
+            dt = min(self.clock.tick(target_fps) / 1000.0, 1 / 20)
             self.frame(dt, pygame.event.get())
         pygame.quit()

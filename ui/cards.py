@@ -117,6 +117,22 @@ def _shine_band(h: int) -> pygame.Surface:
     return pygame.transform.rotate(s, 0)
 
 
+@lru_cache(maxsize=64)
+def _card_shadow(w, hh, alpha):
+    sh = pygame.Surface((w + 16, hh + 16), pygame.SRCALPHA)
+    for i in range(4):
+        pygame.draw.rect(sh, (0, 0, 0, 26), (8 - i * 2, 8 - i * 2 + 4, w + i * 4, hh + i * 4), border_radius=12 + i * 2)
+    sh.set_alpha(alpha)
+    return sh
+
+
+@lru_cache(maxsize=32)
+def _card_veil(w, hh):
+    veil = pygame.Surface((w, hh), pygame.SRCALPHA)
+    pygame.draw.rect(veil, (8, 10, 28, 70), veil.get_rect(), border_radius=12)
+    return veil
+
+
 class CardView:
     """A card sitting in a player's hand. Position is animated toward its slot."""
 
@@ -154,11 +170,8 @@ class CardView:
         sc = 1 + 0.13 * h
         w, hh = int(CARD_W * sc), int(CARD_H * sc)
         # shadow
-        sh = pygame.Surface((w + 16, hh + 16), pygame.SRCALPHA)
-        for i in range(4):
-            pygame.draw.rect(sh, (0, 0, 0, 26), (8 - i * 2, 8 - i * 2 + 4, w + i * 4, hh + i * 4), border_radius=12 + i * 2)
         alpha_mul = 1.0 if mode == "active" else (0.78 if mode == "locked" else 0.42)
-        sh.set_alpha(int(255 * alpha_mul))
+        sh = _card_shadow(w, hh, int(255 * alpha_mul))
         surf.blit(sh, (cx - w / 2 - 8, cy - hh / 2 - 8 + 4 + lift * .6))
         if mode == "active":
             pulse = .30 + .12 * math.sin(t * 3 + self.phase * 6) + .35 * h
@@ -179,9 +192,7 @@ class CardView:
             pygame.draw.rect(surf, lerp_color(GOLD, (255, 255, 255), h), (cx - w / 2, cy - hh / 2, w, hh),
                              2 if h < .5 else 3, border_radius=12)
         elif mode == "dim":
-            veil = pygame.Surface((w, hh), pygame.SRCALPHA)
-            pygame.draw.rect(veil, (8, 10, 28, 70), veil.get_rect(), border_radius=12)
-            surf.blit(veil, (cx - w / 2, cy - hh / 2))
+            surf.blit(_card_veil(w, hh), (cx - w / 2, cy - hh / 2))
 
 
 class CardFlight:

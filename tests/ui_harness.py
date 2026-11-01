@@ -1,5 +1,6 @@
 """Headless harness that drives the real GameScene with synthetic clicks (used by tests + manual review)."""
 import os, sys
+os.environ.setdefault("LUDO_NO_WARMUP", "1")      # tests build scenes directly; test_warmup.py covers the loading screen
 os.environ.setdefault("SDL_VIDEODRIVER", "dummy"); os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import pygame

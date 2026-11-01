@@ -1,6 +1,7 @@
 """GameScene: renders the match and drives it through the GameState machine."""
 from __future__ import annotations
 import math
+from functools import lru_cache
 from collections import defaultdict
 import pygame
 from config.settings import *
@@ -105,6 +106,14 @@ def stack_offsets(n):
     if n == 2: return [(-6, 0), (6, 0)]
     if n == 3: return [(-6, 4), (6, 4), (0, -6)]
     return [(-6, -5), (6, -5), (-6, 6), (6, 6)] + [(0, 0)] * (n - 4)
+
+
+@lru_cache(maxsize=16)
+def _zone_panel(size, col, active):
+    panel = pygame.Surface(size, pygame.SRCALPHA)
+    pygame.draw.rect(panel, (14, 16, 40, 205 if active else 150), panel.get_rect(), border_radius=18)
+    pygame.draw.rect(panel, (*col, 40 if active else 18), panel.get_rect().inflate(-6, -6), border_radius=15)
+    return panel
 
 
 class GameScene:
@@ -597,10 +606,7 @@ class GameScene:
         p = self.match.players[seat]
         col = self.color(seat)
         active = seat == self.focus
-        panel = pygame.Surface(z.size, pygame.SRCALPHA)
-        pygame.draw.rect(panel, (14, 16, 40, 205 if active else 150), panel.get_rect(), border_radius=18)
-        pygame.draw.rect(panel, (*col, 40 if active else 18), panel.get_rect().inflate(-6, -6), border_radius=15)
-        surf.blit(panel, z.topleft)
+        surf.blit(_zone_panel(z.size, tuple(col), active), z.topleft)
         if active:
             draw_glow(surf, z.center, int(z.w * .72), col, .22 + .08 * math.sin(self.t * 3))
         pygame.draw.rect(surf, col if active else shade(col, .55), z, 3 if active else 2, border_radius=18)

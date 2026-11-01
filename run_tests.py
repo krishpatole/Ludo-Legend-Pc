@@ -10,7 +10,7 @@ import sys
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 SUITES = ["test_logic.py", "test_setup.py", "test_capture_bonus.py", "test_ui_flow.py", "test_setup_ui.py",
-          "test_bombs.py", "test_menus.py", "test_scaling.py", "test_touch.py", "test_portrait.py"]
+          "test_bombs.py", "test_menus.py", "test_scaling.py", "test_touch.py", "test_portrait.py", "test_warmup.py"]
 if "--soak" in sys.argv:
     SUITES.append("test_soak.py")
 

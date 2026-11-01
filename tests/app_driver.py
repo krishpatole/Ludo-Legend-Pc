@@ -4,6 +4,7 @@ Used by the UI tests: tap(), type_text(), press(), and start_game_via_ui() which
 Main Menu -> Player Count -> Names -> Colours -> Review -> Start Game flow exactly like a user.
 """
 import os, sys
+os.environ.setdefault("LUDO_NO_WARMUP", "1")      # tests build scenes directly; test_warmup.py covers the loading screen
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from ui_harness import *            # sets SDL dummy drivers, pygame, SCREEN, move_mouse, SHOTS, ...
 from game.app import App

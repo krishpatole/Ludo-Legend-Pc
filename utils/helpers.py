@@ -133,10 +133,11 @@ def _glow(radius, color, q):
 
 
 def draw_glow(surf, center, radius, color, strength=1.0):
-    q = int(clamp(strength, 0, 1) * 10)
-    if q <= 0 or radius < 2:
+    a = int(clamp(strength, 0, 1) * 10) * 25.5          # same 10 steps as before, but ONE cached surface per size/colour
+    if a <= 0 or radius < 2:
         return
-    g = _glow(int(radius), tuple(color), q)
+    g = _glow(int(radius), tuple(color), 10)
+    g.set_alpha(int(a))
     surf.blit(g, g.get_rect(center=(int(center[0]), int(center[1]))))
 
 
@@ -213,4 +214,8 @@ def get_background():
         for gx in range(0, WIDTH, 64):
             for gy in range(0, HEIGHT, 64):
                 pygame.draw.circle(_bg, (255, 255, 255, 14), (gx + 32, gy + 32), 1)
+        try:
+            _bg = _bg.convert()          # match the display pixel format: the per-frame full-screen blit is then a plain copy
+        except pygame.error:
+            pass
     return _bg
